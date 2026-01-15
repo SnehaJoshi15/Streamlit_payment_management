@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 from datetime import date
 from database import *
 
@@ -37,6 +36,8 @@ choice = st.sidebar.radio(
 if choice == "Add Member":
     st.subheader("➕ Add Member")
 
+    st.caption("You can type in any language (Hindi, Marathi, Tamil, etc.)")
+
     name = st.text_input("Name")
     contact = st.text_input("Contact")
     amount = st.number_input("Amount", min_value=0.0)
@@ -65,14 +66,22 @@ elif choice == "View Members":
     else:
         st.dataframe(df)
 
-        member_id = st.selectbox(
-            "Select Member ID",
-            df["ID"].tolist()
+        # Select by NAME instead of ID
+        member_name = st.selectbox(
+            "Select Member Name",
+            df["Name"].tolist()
         )
 
-        selected = df[df["ID"] == member_id].iloc[0]
+        selected = df[df["Name"] == member_name].iloc[0]
+        member_id = int(selected["ID"])
 
         st.markdown("### ✏ Edit Member Details")
+
+        # Show current status
+        st.info(f"Current Payment Status: **{selected['Paid']}**")
+
+        st.caption("You can edit the name in any language")
+
         new_name = st.text_input("Name", selected["Name"])
         new_contact = st.text_input("Contact", selected["Contact"])
         new_amount = st.number_input(
@@ -81,16 +90,28 @@ elif choice == "View Members":
             min_value=0.0
         )
 
+        # ✅ NEW: Payment status editor in UPDATE section
+        new_paid = st.selectbox(
+            "Update Payment Status",
+            ["Yes", "No"],
+            index=0 if selected["Paid"] == "Yes" else 1
+        )
+
         col1, col2 = st.columns(2)
 
         with col1:
             if st.button("Update Details"):
+                # Update name, contact, amount
                 update_member(
                     member_id,
                     new_name,
                     new_contact,
                     new_amount
                 )
+
+                # Update payment status separately
+                update_payment(member_id, new_paid)
+
                 st.success("Member Updated ✅")
                 st.rerun()
 
